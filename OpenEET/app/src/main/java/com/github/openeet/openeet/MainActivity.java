@@ -3,8 +3,8 @@ package com.github.openeet.openeet;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.storage.StorageManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
@@ -34,6 +34,8 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String LOGTAG="MainActivity";
+    public static final String PREFERENCE_TEST_MODE = "test-mode";
+    public static final String PREFERENCE_FILE = "APP";
 
     private enum ListViewContent {
         ALL,
@@ -70,6 +72,15 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+
+        //test mode
+        boolean testMode=getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).getBoolean(PREFERENCE_TEST_MODE,false);
+        //MenuItem itmTestMode=(MenuItem) navigationView.findViewById(R.id.nav_test_mode);
+        MenuItem itmTestMode=navigationView.getMenu().findItem(R.id.nav_test_mode);
+        itmTestMode.setChecked(testMode);
+        Log.d(LOGTAG,"Test mode is: "+testMode);
+
+
         updateList();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -90,7 +101,6 @@ public class MainActivity extends AppCompatActivity
                 startActivity(detail);
             }
         });
-
 
     }
 
@@ -136,21 +146,29 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_last_receipts) {
             listViewContent=ListViewContent.ALL;
             Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny všechny účtenky",3000).show();
-        } else if (id == R.id.nav_offline_receipts) {
-            listViewContent=ListViewContent.OFFLINE;
-            Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny offline registrované účtenky",3000).show();
-        } else if (id == R.id.nav_online_receipts) {
-            listViewContent=ListViewContent.ONLINE;
-            Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny online registrované účtenky",3000).show();
         } else if (id == R.id.nav_unregistereg_receipts) {
             listViewContent=ListViewContent.UNREGISTERED;
             Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny pouze místně uložené účtenky",3000).show();
         } else if (id == R.id.nav_error_receipts) {
             listViewContent=ListViewContent.ERROR;
             Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny účtenky s chybou",3000).show();
-        } else if (id == R.id.nav_settings) {
-            Snackbar.make(findViewById(R.id.content_main_activity),"Nastavení není implementováno",3000).show();
-        } else if (id == R.id.nav_reset_store) {
+        } else if (id == R.id.nav_test_mode) {
+            boolean testModeNew=! getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).getBoolean(PREFERENCE_TEST_MODE,false);
+            Log.d(LOGTAG,"Changing test mode to "+testModeNew);
+            SharedPreferences.Editor editor=getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).edit();
+            editor.putBoolean(PREFERENCE_TEST_MODE, testModeNew);
+            editor.commit();
+            item.setChecked(testModeNew);
+            if (testModeNew)
+                Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven režim testování, odeslané účtenky nebudou evidovány!",3000).show();
+            else
+                Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven evidenční režim, odeslané účtenky BUDOU evidovány!",3000).show();
+
+        } else if (id == R.id.nav_import_cert) {
+            Intent importCertIntent = new Intent(MainActivity.this, CertificateImport.class);
+            startActivity(importCertIntent);
+        }
+        else if (id == R.id.nav_reset_store) {
             try {
                 SaleStore.getInstance(getApplicationContext()).resetStore(SaleStoreFileImpl.BY_BKP);
             } catch (SaleStoreException e) {

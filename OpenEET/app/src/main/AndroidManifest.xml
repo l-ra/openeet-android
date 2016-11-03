@@ -48,6 +48,35 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.github.openeet.openeet.MainActivity" />
         </activity>
+        <activity
+            android:name=".CertificateImport"
+            android:label="@string/title_activity_certificate_import"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.RUN" />
+                <action android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pkcs12" />
+                <data android:mimeType="application/x-pkcs12" />
+                <data android:mimeType="application/x-ahoj" />
+
+                <data android:scheme="data" />
+                <data android:scheme="file" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="*" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*p12" />
+            </intent-filter>
+
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.github.openeet.openeet.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

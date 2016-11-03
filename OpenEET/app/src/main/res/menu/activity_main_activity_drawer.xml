@@ -4,35 +4,32 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_last_receipts"
-            android:icon="@drawable/pointer_spot_touch"
+            android:icon="@drawable/ic_format_align_justify_black_24dp"
             android:title="Poslední účtenky" />
         <item
-            android:id="@+id/nav_online_receipts"
-            android:icon="@drawable/pointer_spot_touch"
-            android:title="Online registrované účtenky" />
-        <item
-            android:id="@+id/nav_offline_receipts"
-            android:icon="@drawable/pointer_spot_touch"
-            android:title="Offline registrované účtenky" />
-        <item
             android:id="@+id/nav_unregistereg_receipts"
-            android:icon="@drawable/pointer_spot_touch"
+            android:icon="@drawable/ic_add_alert_black_24dp"
             android:title="Offline neodeslané účtenky" />
         <item
             android:id="@+id/nav_error_receipts"
-            android:icon="@drawable/pointer_spot_touch"
+            android:icon="@drawable/ic_warning_black_24dp"
             android:title="Chybné účtenky" />
         <item
-            android:id="@+id/nav_settings"
-            android:icon="@drawable/pointer_spot_touch"
-            android:title="Nastavení" />
+            android:id="@+id/nav_test_mode"
+            android:checkable="true"
+            android:icon="@drawable/ic_search_black_24dp"
+            android:title="Testovací režim" />
+        <item
+            android:id="@+id/nav_import_cert"
+            android:icon="@drawable/ic_card_membership_black_24dp"
+            android:title="Import certifikátu" />
         <item
             android:id="@+id/nav_reset_store"
-            android:icon="@drawable/pointer_spot_touch"
+            android:icon="@drawable/ic_delete_black_24dp"
             android:title="Reset úložiště" />
         <item
             android:id="@+id/nav_about"
-            android:icon="@drawable/pointer_spot_touch"
+            android:icon="@drawable/ic_live_help_black_24dp"
             android:title="O aplikaci ..." />
     </group>
 
