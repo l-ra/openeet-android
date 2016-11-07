@@ -29,7 +29,7 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
-            addPreferencesFromResource(R.layout.settings_fragment);
+            addPreferencesFromResource(R.xml.settings_fragment);
         }
     }
 }
