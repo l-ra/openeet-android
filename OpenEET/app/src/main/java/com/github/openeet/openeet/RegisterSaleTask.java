@@ -27,6 +27,7 @@ public class RegisterSaleTask extends AsyncTask <EetSaleDTO,Integer, String> {
     private Context context;
 
     protected RegisterSaleTask(Context context){
+        Log.d(LOGTAG,"Creating instance");
         this.context=context;
     }
 
@@ -39,6 +40,7 @@ public class RegisterSaleTask extends AsyncTask <EetSaleDTO,Integer, String> {
     @Override
     protected String doInBackground(EetSaleDTO... dtoSales) {
         EetSaleDTO sale=dtoSales[0];
+        Log.d(LOGTAG, "Background task started");
 
         //FIXME from settings
         if (sale.id_pokl==null) sale.id_pokl="an-"+ Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -46,6 +48,7 @@ public class RegisterSaleTask extends AsyncTask <EetSaleDTO,Integer, String> {
         sale.porad_cis=String.format("%08x",System.currentTimeMillis());
 
         SaleStore store=SaleStore.getInstance(context.getApplicationContext());
+        SaleService.getInstance(store).setContext(context.getApplicationContext());
         SaleService.getInstance(store).registerSale(sale,new SaleService.SaleServiceListener() {
             @Override
             public void saleDataUpdated(String[] bkpList) {

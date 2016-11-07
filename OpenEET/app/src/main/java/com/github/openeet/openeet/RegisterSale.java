@@ -3,6 +3,7 @@ package com.github.openeet.openeet;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -30,6 +31,10 @@ public class RegisterSale extends AppCompatActivity {
 
         RegisterSaleTemplate template=RegisterSaleTemplate.getSimpleTemplate();
         template.applyAll(findViewById(R.id.register_sale_main));
+
+        String dic= PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(MainActivity.PREFERENCE_DIC,"Importujte certifikát");
+        TextView txtDic=(TextView) findViewById(R.id.dic_popl);
+        txtDic.setText(dic);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
@@ -84,8 +89,7 @@ public class RegisterSale extends AppCompatActivity {
         if (findViewById(R.id.urceno_cerp_zuct).getVisibility()==View.VISIBLE) dtoSale.urceno_cerp_zuct=((EditText)findViewById(R.id.urceno_cerp_zuct)).getText().toString();
         if (findViewById(R.id.cerp_zuct).getVisibility()==View.VISIBLE) dtoSale.cerp_zuct=((EditText)findViewById(R.id.cerp_zuct)).getText().toString();
         if (findViewById(R.id.rezim).getVisibility()==View.VISIBLE) dtoSale.rezim=((EditText)findViewById(R.id.rezim)).getText().toString();
-        
-        
+
         resultIntent.putExtra(RESULT, dtoSale);
         Log.i(LOGTAG,"finish activity");
         setResult(RESULT_OK, resultIntent);

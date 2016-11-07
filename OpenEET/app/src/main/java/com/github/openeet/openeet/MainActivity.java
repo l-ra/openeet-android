@@ -2,12 +2,15 @@ package com.github.openeet.openeet;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -21,6 +24,7 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.security.Provider;
 import java.security.Security;
@@ -31,11 +35,15 @@ import java.util.List;
 import openeet.lite.EetSaleDTO;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String LOGTAG="MainActivity";
     public static final String PREFERENCE_TEST_MODE = "test-mode";
+    public static final String PREFERENCE_PLAYGROUND_MODE = "playground-mode";
+    public static final String PREFERENCE_DIC = "dic";
+    public static final String PREFERENCE_CHANGED_TIME = "changed-time";
     public static final String PREFERENCE_FILE = "APP";
+
 
     private enum ListViewContent {
         ALL,
@@ -52,6 +60,66 @@ public class MainActivity extends AppCompatActivity
     final protected List<EetSaleDTO> list = new ArrayList<EetSaleDTO>();
 
     private BroadcastReceiver broadcastReceiver;
+
+    private void updateTestMode(){
+        //get mode from prefs
+        boolean testMode=PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(PREFERENCE_TEST_MODE,false);
+        Log.d(LOGTAG,"Update test mode by preference: "+testMode);
+
+        //set menu
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+        MenuItem itmTestMode=navigationView.getMenu().findItem(R.id.nav_test_mode);
+        itmTestMode.setChecked(testMode);
+        itmTestMode.setTitle(testMode?"Vypnout testovací režim":"Zapnout testovací režim");
+
+        //snackbar
+        /*
+        if (testMode)
+            Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven režim testování, odeslané účtenky nebudou evidovány!",4000).show();
+        else
+            Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven evidenční režim, odeslané účtenky BUDOU evidovány!",4000).show();
+        */
+
+        //update title
+        TextView lbl=(TextView) findViewById(R.id.lblTestMode);
+        if (lbl==null) return;
+        if (testMode)
+            lbl.setText("TEST");
+        else
+            lbl.setText((""));
+    }
+
+    private void updatePlagroundMode(){
+        boolean playgroundMode=PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(PREFERENCE_PLAYGROUND_MODE,false);
+        Log.d(LOGTAG,"Update playground mode by preference: "+playgroundMode);
+        TextView lbl=(TextView) findViewById(R.id.lblPlayground);
+        if (lbl==null) {
+            Log.d(LOGTAG,"no label for playground mode");
+            return;
+        }
+        if (playgroundMode)
+            lbl.setText("PLAYGROUND");
+        else
+            lbl.setText((""));
+    }
+
+    private void updateDic(){
+        String dic=PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(PREFERENCE_DIC,"Importujte certifikát");
+        Log.d(LOGTAG,"Update dic label:"+dic);
+        TextView lbl=(TextView)findViewById(R.id.lblDic);
+        if (lbl==null) {
+            Log.d(LOGTAG,"no label for dic");
+            return;
+        }
+        lbl.setText("DIČ: "+dic);
+    }
+
+    private void updateOfflineCount(){
+        TextView lbl=(TextView) findViewById(R.id.lblOfflineCount);
+        if (lbl==null) return;
+        lbl.setText("");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,15 +141,6 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
 
-        //test mode
-        boolean testMode=getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).getBoolean(PREFERENCE_TEST_MODE,false);
-        //MenuItem itmTestMode=(MenuItem) navigationView.findViewById(R.id.nav_test_mode);
-        MenuItem itmTestMode=navigationView.getMenu().findItem(R.id.nav_test_mode);
-        itmTestMode.setChecked(testMode);
-        Log.d(LOGTAG,"Test mode is: "+testMode);
-
-
-        updateList();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -153,28 +212,47 @@ public class MainActivity extends AppCompatActivity
             listViewContent=ListViewContent.ERROR;
             Snackbar.make(findViewById(R.id.content_main_activity),"Zobrazeny účtenky s chybou",3000).show();
         } else if (id == R.id.nav_test_mode) {
-            boolean testModeNew=! getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).getBoolean(PREFERENCE_TEST_MODE,false);
+            boolean testModeNew=! PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(PREFERENCE_TEST_MODE,false);
             Log.d(LOGTAG,"Changing test mode to "+testModeNew);
-            SharedPreferences.Editor editor=getApplicationContext().getSharedPreferences(PREFERENCE_FILE,0).edit();
+            SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
             editor.putBoolean(PREFERENCE_TEST_MODE, testModeNew);
+            editor.putLong(MainActivity.PREFERENCE_CHANGED_TIME,System.currentTimeMillis());
             editor.commit();
-            item.setChecked(testModeNew);
-            if (testModeNew)
-                Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven režim testování, odeslané účtenky nebudou evidovány!",3000).show();
-            else
-                Snackbar.make(findViewById(R.id.content_main_activity),"Nastaven evidenční režim, odeslané účtenky BUDOU evidovány!",3000).show();
-
-        } else if (id == R.id.nav_import_cert) {
+        }
+        else if (id == R.id.nav_import_cert) {
             Intent importCertIntent = new Intent(MainActivity.this, CertificateImport.class);
             startActivity(importCertIntent);
         }
+        else if (id == R.id.nav_settings) {
+            Intent settingsActivityIntent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(settingsActivityIntent);
+        }
         else if (id == R.id.nav_reset_store) {
-            try {
-                SaleStore.getInstance(getApplicationContext()).resetStore(SaleStoreFileImpl.BY_BKP);
-            } catch (SaleStoreException e) {
-                Snackbar.make(findViewById(R.id.content_main_activity),"Chyba pri resety: "+e.getMessage(),3000).show();
-            }
-            Snackbar.make(findViewById(R.id.content_main_activity),"Soubor úložiště zálohován a přejmenován.",3000).show();
+            final MainActivity act=this;
+            new AlertDialog.Builder(this)
+                    .setTitle("Vymazání uložených účtenek")
+                    .setMessage("Účtenky uložené v tomto zařízení budou vymazány.")
+                    .setIcon(R.drawable.ic_warning_black_24dp)
+                    .setPositiveButton("Smazat!", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            try {
+                                SaleStore.getInstance(getApplicationContext()).resetStore(SaleStoreFileImpl.BY_BKP);
+                                Snackbar.make(findViewById(R.id.content_main_activity),"Soubor úložiště zálohován a přejmenován.",3000).show();
+                                updateList();
+                            }
+                            catch (Exception e){
+                                Log.e(LOGTAG,"failed to delete store");
+                                Snackbar.make(findViewById(R.id.content_main_activity),"Chyba pri resety: "+e.getMessage(),3000).show();
+                            }
+                        }
+                    })
+                    .setNegativeButton("Nemazat", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                        }
+                    }).show();
+
         } else if (id == R.id.nav_about) {
             Intent showAboutIntent = new Intent(MainActivity.this, AboutActivity.class);
             startActivity(showAboutIntent);
@@ -245,9 +323,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     protected void processRegisterSaleResult(int resultCode, Intent data){
+        Log.d(LOGTAG,"Processing result");
         if (resultCode==RESULT_OK && data!=null) {
             EetSaleDTO dtoSale = (EetSaleDTO) data.getSerializableExtra(RegisterSale.RESULT);
-            new RegisterSaleTask(getBaseContext()).execute(dtoSale);
+            new RegisterSaleTask(getApplicationContext()).execute(dtoSale);
         }
     }
 
@@ -255,12 +334,20 @@ public class MainActivity extends AppCompatActivity
     protected void onStart() {
         Log.d(LOGTAG,"onStart");
         super.onStart();
+        registerBroadcastReceivers();
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
+        updatePlagroundMode();
+        updateTestMode();
+        updateDic();
+        updateOfflineCount();
+        updateList();
     }
 
     @Override
     protected void onStop() {
         Log.d(LOGTAG,"onStop");
         super.onStop();
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -268,6 +355,11 @@ public class MainActivity extends AppCompatActivity
         Log.d(LOGTAG,"onResume");
         super.onResume();
         registerBroadcastReceivers();
+        updatePlagroundMode();
+        updateTestMode();
+        updateOfflineCount();
+        updateDic();
+        updateList();
     }
 
     @Override
@@ -292,6 +384,14 @@ public class MainActivity extends AppCompatActivity
         updateList();
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d(LOGTAG, "Shared pref changed: "+key);
+        updatePlagroundMode();
+        updateTestMode();
+        updateOfflineCount();
+        updateDic();
+    }
 
 
 }

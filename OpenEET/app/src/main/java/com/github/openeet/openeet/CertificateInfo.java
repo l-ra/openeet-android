@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by rasekl on 11/1/16.
@@ -39,11 +41,12 @@ public class CertificateInfo{
     private String info;
     private String passwd;
     private X509Certificate certificate;
-    private Key key;
+    private PrivateKey key;
     private boolean loaded;
     static private List<X509Certificate> playgroundCa;
     static private List<X509Certificate> productionCa;
     private String fileType;
+    private Pattern dicPattern;
 
 
     public CertificateInfo(File certFile){
@@ -56,6 +59,7 @@ public class CertificateInfo{
         this.passwd=null;
         this.loaded=false;
         this.fileType="PKCS12";
+        this.dicPattern=Pattern.compile(".*,CN=(CZ[0-9]+),.*");
     }
 
     private void loadCertsFromAssets(List<X509Certificate> certs, String assetPath) throws IOException, CertificateException {
@@ -75,6 +79,14 @@ public class CertificateInfo{
             }
         }
 
+    }
+
+    public PrivateKey getKey(){
+        return key;
+    }
+
+    public X509Certificate getCertificate(){
+        return certificate;
     }
 
     private void initCaCerts(){
@@ -154,7 +166,7 @@ public class CertificateInfo{
                         Log.d(LOGTAG,"Alias is cert enry"+alias);
                         X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
                         Log.d(LOGTAG,"Certificate in question:"+cert.toString());
-                        Key key=ks.getKey(alias,passwd.toCharArray());
+                        PrivateKey key=(PrivateKey)ks.getKey(alias,passwd.toCharArray());
 
                         this.certificate=cert;
                         this.key=key;
@@ -183,7 +195,8 @@ public class CertificateInfo{
             OutputStream storeOStream=context.openFileOutput(KEYSTORE_PRIVATE_STREAM,Context.MODE_PRIVATE);
             OutputStream passwordOStream=context.openFileOutput(KEYSTORE_PASSWORD_PRIVATE_STREAM,Context.MODE_PRIVATE);
             String password = UUID.randomUUID().toString();
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(null,null);
             ks.setKeyEntry(KEYSTORE_ALIAS,key, password.toCharArray(),new X509Certificate[]{certificate});
             ks.store(storeOStream,password.toCharArray());
             storeOStream.close();
@@ -196,7 +209,7 @@ public class CertificateInfo{
         }
     }
 
-    public static CertificateInfo loadStored(){
+    public static CertificateInfo load(){
         try {
             File storeFile=context.getFileStreamPath(KEYSTORE_PRIVATE_STREAM);
             InputStream storePassStream=context.openFileInput(KEYSTORE_PASSWORD_PRIVATE_STREAM);
@@ -218,6 +231,18 @@ public class CertificateInfo{
         }
     }
 
+    public String getDic(){
+        if (!loaded) return null;
+        String subj=certificate.getSubjectDN().toString();
+        Matcher match=dicPattern.matcher(subj);
+        if (!match.matches()) {
+            Log.w(LOGTAG,"DIC not find in certificate subject:"+subj);
+            return null;
+        }
+        String dic=match.group(1);
+        return dic;
+    }
+
     private static AssetManager assetManager;
     public static void setAssetManager(AssetManager _assetManager){
         assetManager=_assetManager;
@@ -226,6 +251,8 @@ public class CertificateInfo{
     private static Context context;
     public static void setContext(Context _context){
         context=_context;
+        if (context!=null)
+            assetManager=context.getAssets();
     }
 
 }

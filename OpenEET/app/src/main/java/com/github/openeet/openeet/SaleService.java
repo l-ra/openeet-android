@@ -1,14 +1,16 @@
 package com.github.openeet.openeet;
 
-import android.content.Context;
-import android.os.Environment;
-import android.util.Log;
-
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.Serializable;
+
+import android.content.Context;
+import android.os.Environment;
+
+import android.preference.PreferenceManager;
+import android.util.Log;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,6 +32,12 @@ import openeet.lite.Main;
 public class SaleService {
     private static final String LOGTAG="SaleService";
     private static final String FIK_PATTERN ="eet:Potvrzeni fik=\"";
+
+    private Context context;
+
+    public void setContext(Context context){
+        this.context=context;
+    }
 
     /**
      *
@@ -309,13 +317,18 @@ public class SaleService {
         try {
             if (entry.registered) return; //already registered
 
+
+            CertificateInfo.setContext(context);
+            CertificateInfo certInfo=CertificateInfo.load();
+            boolean overeni= PreferenceManager.getDefaultSharedPreferences(context).getBoolean(MainActivity.PREFERENCE_TEST_MODE,false);
+
             entry.startAttempt();
             if (!firstAttempt) store.saveSaleEntry(entry);
             notifyListeners(bkpList);
             EetRegisterRequest.Builder builder = EetRegisterRequest.builder()
                     .fromDTO(entry.saleData)
-                    .pkcs12(EetRegisterRequest.loadStream(Main.class.getResourceAsStream("/openeet/lite/01000003.p12")))
-                    .pkcs12password("eet");
+                    .key(certInfo.getKey())
+                    .certificate(certInfo.getCertificate());
 
             EetRegisterRequest request=builder.build();
             if (firstAttempt) {
@@ -327,9 +340,10 @@ public class SaleService {
 
             String soapRequest;
             if (firstAttempt)
-                soapRequest=request.generateSoapRequest(null, EetRegisterRequest.PrvniZaslani.PRVNI, null,null);
-            else
-                soapRequest=request.generateSoapRequest(null, EetRegisterRequest.PrvniZaslani.OPAKOVANE, null,null);
+                soapRequest=request.generateSoapRequest(null, EetRegisterRequest.PrvniZaslani.PRVNI, null, EetRegisterRequest.Overeni.valueOf(overeni));
+            else {
+                soapRequest = request.generateSoapRequest(null, EetRegisterRequest.PrvniZaslani.OPAKOVANE, null, EetRegisterRequest.Overeni.valueOf(Boolean.parseBoolean(entry.attempts.get(0).header.getOvereni())));
+            }
             //writeStringToFile(soapRequest,"request");
 
             entry.currentAttempt.header=request.getLastHeader();
@@ -337,14 +351,27 @@ public class SaleService {
             entry.currentAttempt.startSendingTime= System.currentTimeMillis();
             store.saveSaleEntry(entry);
 
-            String soapResponse=request.sendRequest(soapRequest, new URL("https://pg.eet.cz:443/eet/services/EETServiceSOAP/v3"));
+            URL url;
+            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(MainActivity.PREFERENCE_PLAYGROUND_MODE,false))
+                url=new URL("https://pg.eet.cz:443/eet/services/EETServiceSOAP/v3");
+            else
+                url=new URL("https://prod.eet.cz:443/eet/services/EETServiceSOAP/v3");
+
+
+            String soapResponse=request.sendRequest(soapRequest,url);
             entry.currentAttempt.soapResponse=soapResponse;
             entry.currentAttempt.response=new EetResponse(soapResponse);
             entry.currentAttempt.startSendingTime=System.currentTimeMillis();
             //writeStringToFile(soapResponse,"response");
             store.saveSaleEntry(entry);
 
-            if (soapResponse.contains(FIK_PATTERN)) {
+            if (soapResponse.contains("<eet:Chyba kod=\"0\"")){
+                Log.d(LOGTAG, "Uspesne zpracovano v overovacim rezimu");
+                String fik="Overovaci rezim OK";
+                entry.finishAttempt(true,false, firstAttempt?false:true, fik,null, null);
+                store.saveSaleEntry(entry);
+            }
+            else if (soapResponse.contains(FIK_PATTERN)) {
                 int fikIdx=soapResponse.indexOf(FIK_PATTERN)+FIK_PATTERN.length();
                 String fik=soapResponse.substring(fikIdx,fikIdx+39);
                 entry.finishAttempt(true,false, firstAttempt?false:true, fik,null, null);

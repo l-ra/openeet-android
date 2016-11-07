@@ -1,9 +1,13 @@
 package com.github.openeet.openeet;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -29,6 +33,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Pattern;
 
 
 public class CertificateImport extends AppCompatActivity {
@@ -106,8 +111,17 @@ public class CertificateImport extends AppCompatActivity {
     }
 
     private void importCurrent(){
+        if (currentCert<0 || currentCert>=certInfos.size())
+            throw new IllegalStateException("bad index");
+        certInfos.get(currentCert).store();
+        SharedPreferences.Editor editor= PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+        editor.putBoolean(MainActivity.PREFERENCE_PLAYGROUND_MODE,certInfos.get(currentCert).isPlaygroundCert());
+        editor.putString(MainActivity.PREFERENCE_DIC,certInfos.get(currentCert).getDic());
+        editor.putLong(MainActivity.PREFERENCE_CHANGED_TIME,System.currentTimeMillis());
+        Log.d(LOGTAG,String.format("importing certificate: %s %s ",certInfos.get(currentCert).getDic(), certInfos.get(currentCert).isPlaygroundCert()?"PLAYGROUND":"PRODUCTION"));
+        editor.commit();
 
-
+        NavUtils.navigateUpFromSameTask(this);
     }
 
     private void tryPassword(String password){
@@ -164,6 +178,7 @@ public class CertificateImport extends AppCompatActivity {
     }
 
     private void displayCert(){
+        findViewById(R.id.btnImport).setEnabled(false);
         TextView txtCertInfo=(TextView)findViewById(R.id.txtCertInfo);
         if (certInfos.size()>0 && currentCert>=0) {
             CertificateInfo certInfo = certInfos.get(currentCert);

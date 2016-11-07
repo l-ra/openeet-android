@@ -31,6 +31,7 @@ public class RetryRegisterSalesTask extends AsyncTask <String ,Integer, String> 
     @Override
     protected String doInBackground(String... dummy) {
         SaleStore store=SaleStore.getInstance(context.getApplicationContext());
+        SaleService.getInstance(store).setContext(context.getApplicationContext());
         SaleService.getInstance(store).retryUnfinished(new SaleService.SaleServiceListener() {
             @Override
             public void saleDataUpdated(String[] bkpList) {

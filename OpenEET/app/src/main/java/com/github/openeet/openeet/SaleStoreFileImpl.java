@@ -43,6 +43,13 @@ public class SaleStoreFileImpl extends  SaleStore {
         }
     }
 
+    private static final class DatTrzbyComparatorDesc implements Comparator<SaleService.SaleEntry> {
+        @Override
+        public int compare(SaleService.SaleEntry saleEntry, SaleService.SaleEntry t1) {
+            return -saleEntry.saleData.dat_trzby.compareToIgnoreCase(t1.saleData.dat_trzby);
+        }
+    }
+
 
     /**
      *
@@ -164,7 +171,7 @@ public class SaleStoreFileImpl extends  SaleStore {
     public SaleService.SaleEntry[] findAll(int offset, int limit, LimitType type) throws SaleStoreException {
         Map<String, SaleService.SaleEntry> byBkp=load(BY_BKP);
         SaleService.SaleEntry[] data=byBkp.values().toArray(new SaleService.SaleEntry[byBkp.size()]);
-        Arrays.sort(data, new DatTrzbyComparator());
+        Arrays.sort(data, new DatTrzbyComparatorDesc());
         return data;
     }
 
@@ -177,7 +184,7 @@ public class SaleStoreFileImpl extends  SaleStore {
                 selected.add(e);
         }
         SaleService.SaleEntry[] ret=selected.toArray(new SaleService.SaleEntry[selected.size()]);
-        Arrays.sort(ret,new DatTrzbyComparator());
+        Arrays.sort(ret,new DatTrzbyComparatorDesc());
         return ret;
     }
 
@@ -190,7 +197,7 @@ public class SaleStoreFileImpl extends  SaleStore {
                 selected.add(e);
         }
         SaleService.SaleEntry[] ret=selected.toArray(new SaleService.SaleEntry[selected.size()]);
-        Arrays.sort(ret,new DatTrzbyComparator());
+        Arrays.sort(ret,new DatTrzbyComparatorDesc());
         return ret;
     }
 
@@ -203,7 +210,7 @@ public class SaleStoreFileImpl extends  SaleStore {
                 selected.add(e);
         }
         SaleService.SaleEntry[] ret=selected.toArray(new SaleService.SaleEntry[selected.size()]);
-        Arrays.sort(ret,new DatTrzbyComparator());
+        Arrays.sort(ret,new DatTrzbyComparatorDesc());
         return ret;
     }
 
@@ -216,7 +223,7 @@ public class SaleStoreFileImpl extends  SaleStore {
                 selected.add(e);
         }
         SaleService.SaleEntry[] ret=selected.toArray(new SaleService.SaleEntry[selected.size()]);
-        Arrays.sort(ret,new DatTrzbyComparator());
+        Arrays.sort(ret,new DatTrzbyComparatorDesc());
         return ret;
     }
 

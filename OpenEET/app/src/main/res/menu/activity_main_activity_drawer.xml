@@ -16,13 +16,16 @@
             android:title="Chybné účtenky" />
         <item
             android:id="@+id/nav_test_mode"
-            android:checkable="true"
             android:icon="@drawable/ic_search_black_24dp"
             android:title="Testovací režim" />
         <item
             android:id="@+id/nav_import_cert"
             android:icon="@drawable/ic_card_membership_black_24dp"
             android:title="Import certifikátu" />
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings_black_24dp"
+            android:title="Další nastavení" />
         <item
             android:id="@+id/nav_reset_store"
             android:icon="@drawable/ic_delete_black_24dp"
